@@ -1,1 +1,810 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <title>Shada Messenger</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0e1621;
+      color: white;
+    }
+
+    button,
+    input {
+      font-family: inherit;
+    }
+
+    .screen {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .active {
+      display: flex;
+    }
+
+    #loginScreen {
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      background: #17212b;
+      padding: 25px;
+      border-radius: 20px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #229ed9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px;
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: #242f3d;
+      color: white;
+      padding: 14px;
+      border-radius: 12px;
+      margin: 8px 0;
+      font-size: 15px;
+    }
+
+    .main-btn {
+      width: 100%;
+      border: none;
+      background: #229ed9;
+      color: white;
+      padding: 14px;
+      border-radius: 12px;
+      margin-top: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #error {
+      color: #ff7777;
+      margin-top: 10px;
+    }
+
+    #appScreen {
+      flex-direction: column;
+    }
+
+    .top {
+      height: 65px;
+      background: #17212b;
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+    }
+
+    .avatar {
+      width: 43px;
+      height: 43px;
+      border-radius: 50%;
+      background: #229ed9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    .users {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .user {
+      background: #17212b;
+      padding: 15px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .chat {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .chat-header {
+      height: 65px;
+      background: #17212b;
+      display: flex;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .back {
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 25px;
+      margin-left: 10px;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 15px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .mine {
+      align-self: flex-end;
+      background: #2b5278;
+    }
+
+    .theirs {
+      align-self: flex-start;
+      background: #182533;
+    }
+
+    .send-area {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: #17212b;
+    }
+
+    .send-area input {
+      margin: 0;
+    }
+
+    .send {
+      width: 50px;
+      border: none;
+      border-radius: 50%;
+      background: #229ed9;
+      color: white;
+      font-size: 20px;
+    }
+
+    .small {
+      color: #9aaab7;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- صفحه ورود -->
+
+<div id="loginScreen" class="screen active">
+
+  <div class="login-box">
+
+    <div class="logo">S</div>
+
+    <h2>Shada</h2>
+
+    <p>برای ورود یک نام انتخاب کن</p>
+
+    <input
+      id="username"
+      placeholder="مثلاً Amir"
+      maxlength="30"
+    >
+
+    <button class="main-btn" onclick="startApp()">
+      ورود به نسخه آزمایشی
+    </button>
+
+    <div id="error"></div>
+
+  </div>
+
+</div>
+
+
+<!-- صفحه اصلی -->
+
+<div id="appScreen" class="screen">
+
+  <div class="top">
+
+    <div class="avatar" id="myAvatar">
+      S
+    </div>
+
+    <div>
+      <b>Shada</b>
+
+      <div class="small">
+        کاربران
+      </div>
+    </div>
+
+  </div>
+
+  <div class="users" id="users">
+
+    <p>
+      کاربران در حال بارگذاری...
+    </p>
+
+  </div>
+
+</div>
+
+
+<!-- صفحه چت -->
+
+<div id="chatScreen" class="chat">
+
+  <div class="chat-header">
+
+    <button class="back" onclick="closeChat()">
+      ←
+    </button>
+
+    <div class="avatar" id="chatAvatar">
+      S
+    </div>
+
+    <div>
+      <b id="chatName">کاربر</b>
+
+      <div class="small">
+        چت خصوصی
+      </div>
+    </div>
+
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="send-area">
+
+    <input
+      id="messageInput"
+      placeholder="پیام..."
+      onkeydown="if(event.key==='Enter') sendMessage()"
+    >
+
+    <button class="send" onclick="sendMessage()">
+      ➤
+    </button>
+
+  </div>
+
+</div>
+
+
+<script>
+
+/* =========================================
+   اتصال به Supabase
+========================================= */
+
+const SUPABASE_URL =
+  "https://xznohwadrkyzkbmqwzal.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_bACWVOOOR80UplTDtgLY4w_ejgnx9S5";
+
+
+const supabaseClient =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+/* =========================================
+   متغیرها
+========================================= */
+
+let currentUser = null;
+let currentProfile = null;
+let selectedUser = null;
+let realtimeChannel = null;
+
+
+/* =========================================
+   ورود آزمایشی
+========================================= */
+
+async function startApp() {
+
+  const usernameInput =
+    document.getElementById("username");
+
+  const username =
+    usernameInput.value.trim();
+
+
+  if (!username) {
+
+    showError("یک نام وارد کن.");
+
+    return;
+  }
+
+
+  showError("در حال ورود...");
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.auth.signInAnonymously();
+
+
+  if (error) {
+
+    showError(
+      "ورود انجام نشد: " +
+      error.message
+    );
+
+    return;
+  }
+
+
+  currentUser = data.user;
+
+
+  const {
+    data: profile,
+    error: profileError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .upsert({
+        id: currentUser.id,
+        username: username,
+        display_name: username
+      })
+      .select()
+      .single();
+
+
+  if (profileError) {
+
+    showError(
+      "ساخت پروفایل انجام نشد: " +
+      profileError.message
+    );
+
+    return;
+  }
+
+
+  currentProfile = profile;
+
+
+  document.getElementById("myAvatar")
+    .textContent =
+    username.charAt(0).toUpperCase();
+
+
+  document.getElementById("loginScreen")
+    .classList.remove("active");
+
+
+  document.getElementById("appScreen")
+    .classList.add("active");
+
+
+  loadUsers();
+
+}
+
+
+/* =========================================
+   نمایش خطا
+========================================= */
+
+function showError(text) {
+
+  document.getElementById("error")
+    .textContent = text;
+
+}
+
+
+/* =========================================
+   دریافت کاربران
+========================================= */
+
+async function loadUsers() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .neq("id", currentUser.id)
+      .order("created_at");
+
+
+  const container =
+    document.getElementById("users");
+
+
+  if (error) {
+
+    container.innerHTML =
+      "<p>خطا در دریافت کاربران</p>";
+
+    console.error(error);
+
+    return;
+  }
+
+
+  container.innerHTML = "";
+
+
+  if (!data || !data.length) {
+
+    container.innerHTML =
+      "<p>فعلاً کاربر دیگری وجود ندارد.</p>";
+
+    return;
+  }
+
+
+  data.forEach(user => {
+
+    const div =
+      document.createElement("div");
+
+
+    div.className = "user";
+
+
+    div.innerHTML = `
+      <b>${escapeHtml(user.display_name)}</b>
+
+      <div class="small">
+        @${escapeHtml(user.username)}
+      </div>
+    `;
+
+
+    div.onclick =
+      () => openChat(user);
+
+
+    container.appendChild(div);
+
+  });
+
+}
+
+
+/* =========================================
+   باز کردن چت
+========================================= */
+
+async function openChat(user) {
+
+  selectedUser = user;
+
+
+  document.getElementById("appScreen")
+    .classList.remove("active");
+
+
+  document.getElementById("chatScreen")
+    .style.display = "flex";
+
+
+  document.getElementById("chatName")
+    .textContent =
+    user.display_name;
+
+
+  document.getElementById("chatAvatar")
+    .textContent =
+    user.display_name
+      .charAt(0)
+      .toUpperCase();
+
+
+  await loadMessages();
+
+  subscribeToMessages();
+
+}
+
+
+/* =========================================
+   دریافت پیام‌های قبلی
+========================================= */
+
+async function loadMessages() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("messages")
+      .select("*")
+      .or(
+        `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`
+      )
+      .order("created_at", {
+        ascending: true
+      });
+
+
+  if (error) {
+
+    console.error(error);
+
+    return;
+  }
+
+
+  const box =
+    document.getElementById("messages");
+
+
+  box.innerHTML = "";
+
+
+  data.forEach(message => {
+
+    addMessageToScreen(message);
+
+  });
+
+
+  scrollMessages();
+
+}
+
+
+/* =========================================
+   ارسال پیام
+========================================= */
+
+async function sendMessage() {
+
+  const input =
+    document.getElementById("messageInput");
+
+
+  const text =
+    input.value.trim();
+
+
+  if (!text || !selectedUser) {
+
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("messages")
+      .insert({
+        sender_id: currentUser.id,
+        receiver_id: selectedUser.id,
+        message: text
+      });
+
+
+  if (error) {
+
+    alert(
+      "ارسال نشد: " +
+      error.message
+    );
+
+    return;
+  }
+
+
+  input.value = "";
+
+}
+
+
+/* =========================================
+   دریافت لحظه‌ای
+========================================= */
+
+function subscribeToMessages() {
+
+  if (realtimeChannel) {
+
+    supabaseClient
+      .removeChannel(realtimeChannel);
+
+  }
+
+
+  realtimeChannel =
+    supabaseClient
+      .channel(
+        "chat-" +
+        currentUser.id +
+        "-" +
+        selectedUser.id
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages"
+        },
+        payload => {
+
+          const message =
+            payload.new;
+
+
+          const isOurChat =
+            (
+              message.sender_id === currentUser.id &&
+              message.receiver_id === selectedUser.id
+            )
+            ||
+            (
+              message.sender_id === selectedUser.id &&
+              message.receiver_id === currentUser.id
+            );
+
+
+          if (isOurChat) {
+
+            addMessageToScreen(message);
+
+            scrollMessages();
+
+          }
+
+        }
+      )
+      .subscribe();
+
+}
+
+
+/* =========================================
+   نمایش پیام
+========================================= */
+
+function addMessageToScreen(message) {
+
+  const box =
+    document.getElementById("messages");
+
+
+  const div =
+    document.createElement("div");
+
+
+  div.className =
+    "message " +
+    (
+      message.sender_id === currentUser.id
+        ? "mine"
+        : "theirs"
+    );
+
+
+  div.textContent =
+    message.message;
+
+
+  box.appendChild(div);
+
+}
+
+
+/* =========================================
+   اسکرول
+========================================= */
+
+function scrollMessages() {
+
+  const box =
+    document.getElementById("messages");
+
+
+  box.scrollTop =
+    box.scrollHeight;
+
+}
+
+
+/* =========================================
+   بستن چت
+========================================= */
+
+function closeChat() {
+
+  if (realtimeChannel) {
+
+    supabaseClient
+      .removeChannel(realtimeChannel);
+
+    realtimeChannel = null;
+
+  }
+
+
+  document.getElementById("chatScreen")
+    .style.display = "none";
+
+
+  document.getElementById("appScreen")
+    .classList.add("active");
+
+}
+
+
+/* =========================================
+   جلوگیری از HTML
+========================================= */
+
+function escapeHtml(text) {
+
+  const div =
+    document.createElement("div");
+
+
+  div.textContent =
+    text;
+
+
+  return div.innerHTML;
+
+}
+
+</script>
+
+</body>
+</html>
